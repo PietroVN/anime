@@ -1,20 +1,22 @@
 #!/bin/bash
 # Author: PietroVN
 # Deps: mpv, youtube-dl(or any fork), search (included), curl, sed
+# Examples:
+# video anime:<anime name>			| Search for anime with this name
+# video youutube:<video name>		| Search for a video with this name
+# video url:<url>					| Play specified url
 
 # Include search
 . /usr/local/bin/search
 
 # Command
 command=$@
-echo ${command}
 
-_search() {
+_play() {
 	# Detect mode
 	case ${command} in
 		*"youtube:"*)
 				# Leave only the title on command
-				command=$(sed 's/search//g' <<< ${command})
 				command=$(sed 's/youtube://g' <<< ${command})
 
 				# Search
@@ -31,9 +33,8 @@ _search() {
 		*"anime:"*)
 
 				# Leave only the title on command
-				command=$(sed 's/search//g' <<< ${command})
 				command=$(sed 's/anime://g' <<< ${command})
-				echo ${command}
+
 				# Search
 				search _anime:${command}
 
@@ -55,8 +56,11 @@ _search() {
 # Check if command is empty
 [[ -z ${command} ]] && echo "Empty command"
 
-case ${command} in
-	*"search"*)
-		_search
-	;;
-esac
+# Play function
+_play
+
+#case ${command} in
+#	*"search"*)
+#		_search
+#	;;
+#esac
