@@ -8,3 +8,7 @@ I plan adding more support later
 * YoutubeDL
 * Sed
 * Curl
+
+# Install instructions
+* Clone this repo
+* Run install.sh
