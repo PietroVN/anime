@@ -1,6 +1,5 @@
 # Video
-Watch youtube videos without needing to use youtube
-I plan adding more support later
+Simple script to watch videos on terminal (only supporting youtube for now)
 
 # Deps
 * Search (Included)
