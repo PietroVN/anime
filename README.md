@@ -1,5 +1,5 @@
 # Video
-Simple script to watch videos on terminal (only supporting youtube for now)
+Simple script to watch videos and animes on terminal
 
 # Deps
 * Search (Included)
