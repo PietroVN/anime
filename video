@@ -7,25 +7,44 @@
 
 # Command
 command=$@
+echo ${command}
 
-play() {
+_search() {
 	# Detect mode
 	case ${command} in
-		*"search:"*)
+		*"youtube:"*)
 				# Leave only the title on command
-				command=$(sed 's/search://g' <<< ${command})
-				command=$(sed 's/play//g' <<< ${command})
+				command=$(sed 's/search//g' <<< ${command})
+				command=$(sed 's/youtube://g' <<< ${command})
 
 				# Search
-				search YOUTUBE:${command}
+				search _youtube:${command}
 
 				# 
 				echo "Select video:"
 				read video_number
-				video=$(cat ${TMP_VIDEOS} | sed -n ${video_number}p)
+				video=$(cat ${tmp_videos} | sed -n ${video_number}p)
 
 				# Play
-				mpv ${YOUTUBE}${video}
+				mpv ${youtube}${video}
+		;;
+		*"anime:"*)
+
+				# Leave only the title on command
+				command=$(sed 's/search//g' <<< ${command})
+				command=$(sed 's/anime://g' <<< ${command})
+				echo ${command}
+				# Search
+				search _anime:${command}
+
+				# 
+				echo "Select video:"
+				read video_number
+				video=$(cat ${tmp_videos} | sed -n ${video_number}p)
+
+				# Play
+				mpv ${video}
+
 		;;
 		*"url:"*)
 			
@@ -36,9 +55,8 @@ play() {
 # Check if command is empty
 [[ -z ${command} ]] && echo "Empty command"
 
-# 
 case ${command} in
-	*"play"*)
-		play
+	*"search"*)
+		_search
 	;;
 esac
