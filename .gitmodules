@@ -1,0 +1,3 @@
+[submodule "deps/search"]
+	path = deps/search
+	url = https://github.com/PietroVN/search
