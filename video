@@ -3,7 +3,7 @@
 # Deps: mpv, youtube-dl(or any fork), search (included), curl, sed
 # Examples:
 # video anime:<anime name>			| Search for anime with this name
-# video youutube:<video name>		| Search for a video with this name
+# video youtube:<video name>		| Search for a video with this name
 # video url:<url>					| Play specified url
 
 # Include search
@@ -12,55 +12,214 @@
 # Command
 command=$@
 
-_play() {
-	# Detect mode
-	case ${command} in
-		*"youtube:"*)
-				# Leave only the title on command
-				command=$(sed 's/youtube://g' <<< ${command})
+# Enviroment
+root="${HOME}/video_cli"
 
-				# Search
-				search _youtube:${command}
+# Anime related
+anime_root="${root}/animes/"
+anime_folder="${anime_root}${anime_current}/"
+anime_current_episode_dir="${anime_folder}/current_episode.txt"
+anime_current_watching_dir="${anime_folder}/current_watching.txt"
+anime_episodes_dir="${anime_folder}/episodes.txt"
 
-				# 
-				echo "Select video:"
-				read video_number
-				video=$(cat ${tmp_videos} | sed -n ${video_number}p)
+_youtube() {
+	# Leave only the title on command
+	command=$(sed 's/youtube://g' <<< ${command})
 
-				# Play
-				mpv ${youtube}${video}
-		;;
-		*"anime:"*)
+	# Search
+	search _youtube:${command}
 
-				# Leave only the title on command
-				command=$(sed 's/anime://g' <<< ${command})
+	# Check for errors | don't warn the user about the error because search already handle this
+	[[ -f "${tmp_videos}" ]] || exit
 
-				# Search
-				search _anime:${command}
+	# Video selection
+	echo "Select video:"
+	read video_number
 
-				# 
-				echo "Select video:"
-				read video_number
-				video=$(cat ${tmp_videos} | sed -n ${video_number}p)
+	# Get video from tmp videos
+	video=$(cat ${tmp_videos} | sed -n ${video_number}p)
 
-				# Play
-				mpv ${video}
-
-		;;
-		*"url:"*)
-			
-		;;
-	esac
+	# Play
+	mpv --no-terminal ${youtube}${video}
 }
 
+_set_anime_variables() {
+	# Set some variables that depend on files
+	anime_current=$(cat ${tmp_selected_anime_dir})
+	[[ -f ${anime_current_episode_dir} ]] && anime_current_episode=$(cat ${anime_current_episode_dir})
+	[[ -f ${anime_episodes_dir} ]] && anime_episodes=$(cat ${anime_episodes_dir})
+}
+
+_anime() {
+
+	# Leave only the title on command
+	command=$(sed 's/anime://g' <<< ${command})
+
+	########## Animes folder
+
+	# Setup a dir on user home
+	[[ -d "${root}" ]] || mkdir ${root}
+
+	# Create anime root
+	[[ -d "${anime_root}" ]] || mkdir ${anime_root}
+
+	# Create folder for saving current anime episode
+	[[ -d "${anime_folder}" ]] || mkdir "${anime_folder}"
+
+	# Search anime
+	search _anime:${command}
+	
+	# Check for errors
+	[[ -f "${tmp_animes_dir}" ]] || echo "Error fetching anime list"
+	[[ -f "${tmp_animes_dir}" ]] || exit
+
+	# Set some variables that depend on files
+	_set_anime_variables
+
+	########## QOL
+
+	# Check if user watched this anime before and prompt to continue watching
+	if [[ -f ${anime_current_episode_dir} ]]; then
+		# Prompt user
+		echo ""
+		echo "You already watched this anime before, do you want to continue from where you stopped?"
+		echo "[yes | no | next | prev]"
+		read continue_
+
+		# Continue
+		[[ "${continue_}" == "yes" ]] && choosen_episode=${anime_current_episode}
+		[[ "${continue_}" == "next" ]] && choosen_episode=$((${anime_current_episode}+1))
+		[[ "${continue_}" == "prev" ]] && choosen_episode=$((${anime_current_episode}-1))
+		[[ "${continue_}" == "no" ]] || echo "${choosen_episode}" > ${anime_current_episode_dir}
+
+		# Set some variables that depend on files
+		_set_anime_variables
+	fi
+	
+	if [[ "${continue_}" == "no" || -z ${continue_} ]]; then
+		# Fetch episodes list
+		search _choose_anime_episode
+		
+		# Check for errors
+		[[ -f "${tmp_animes_dir}" ]] || echo "Error fetching episodes list"
+		[[ -f "${tmp_animes_dir}" ]] || exit
+
+		# Delete previous episode list
+		[[ -f ${anime_episodes_dir} ]] && rm ${anime_episodes_dir}
+
+		# Dump episodes to animedir
+		for f in $(cat ${tmp_animes_dir}); do
+			echo "${f}" >> "${anime_episodes_dir}"
+		done
+
+		# Select episode
+		echo "Select episode:"
+		read choosen_episode
+
+		# Set some variables that depend on files
+		_set_anime_variables
+	fi
+
+	# Get episode
+	video=$(cat ${anime_episodes_dir} | sed -n ${choosen_episode}p)
+
+	# Save current episode
+	echo "${choosen_episode}" > "${anime_current_episode_dir}"
+
+	# Informs the user
+	echo "Playing: ${anime_current}"
+	echo "Episode: ${anime_current_episode}"
+
+	# Update current_watching
+	echo "${anime_current}" > ${anime_current_watching_dir}
+
+	echo ""
+	echo "Opening mpv..."
+
+	# Play
+	mpv --no-terminal ${video} &
+}
+
+_url() {
+	# Clear command
+	command=$(sed 's/url://g' <<< ${command})
+
+	# Play
+	mpv --no-terminal ${command}
+}
+
+_next() {
+	# Check for current watching
+	[[ -f "${anime_current_watching_dir}" ]] || echo "Current watching doesn't exists"
+
+	# Informs the user
+	echo "Playing next episode..."
+	
+
+	# Set current ep
+	_set_anime_variables
+	anime_episode="$((${anime_current_episode}+1))"
+	echo "${anime_episode}" > ${anime_current_episode_dir}
+
+	# Get next eoisode
+	video=$(cat ${anime_episodes_dir} | sed -n ${anime_episode}p)
+
+	# Informs the user
+	echo "Playing: ${anime_current_watching}"
+	echo "Episode: ${anime_current_episode}"
+
+	echo ""
+	echo "Opening mpv.."
+
+	# Play && falback
+	mpv --no-terminal ${video} &
+}
+
+_prev() {
+	# Check for current watching
+	[[ -f "${anime_current_watching}" ]] || echo "Current watching doesn't exists"
+
+	# Informs the user
+	echo "Playing previous episode..."
+
+	# Set current ep
+	_set_anime_variables
+	anime_episode="$((${anime_current_episode}-1))"
+	echo "${anime_episode}" > ${anime_current_episode_dir}
+
+	# Get previous eoisode
+	video=$(cat ${anime_episodes_dir} | sed -n ${anime_episode}p)
+
+	# Informs the user
+	echo "Playing: ${anime_current_watching}"
+	echo "Episode: ${current_episode}"
+
+	echo ""
+	echo "Opening mpv"
+
+	# Play
+	mpv --no-terminal ${video} &
+}
 # Check if command is empty
 [[ -z ${command} ]] && echo "Empty command"
 
-# Play function
-_play
-
-#case ${command} in
-#	*"search"*)
-#		_search
-#	;;
-#esac
+case ${command} in
+	*"anime:"*)
+		_anime
+	;;
+	*"youtube:"*)
+		_youtube
+	;;
+	*"url:"*)
+		_url
+	;;
+	"next")
+		_next
+	;;
+	"prev")
+		_prev
+	;;
+	"previous")
+		_prev
+	;;
+esac
