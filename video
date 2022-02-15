@@ -280,12 +280,12 @@ _anime_search() {
 	search _anime:${command}
 	
 	# Check for errors
-	[[ -f "${tmp_animes_dir}" ]] || echo "Error fetching anime list"
-	[[ -f "${tmp_animes_dir}" ]] || exit
+	[[ -f "${tmp_animes_list}" ]] || echo "Error fetching anime list"
+	[[ -f "${tmp_animes_list}" ]] || exit
 
 	# Set some variables that depend on files
 	_set_anime_variables
-
+	
 	########## QOL
 
 	# Check if user watched this anime before and prompt to continue watching
@@ -311,14 +311,14 @@ _anime_search() {
 		search _choose_anime_episode
 		
 		# Check for errors
-		[[ -f "${tmp_animes_dir}" ]] || echo "Error fetching episodes list"
-		[[ -f "${tmp_animes_dir}" ]] || exit
+		[[ -f "${tmp_animes_list}" ]] || echo "Error fetching episodes list"
+		[[ -f "${tmp_animes_list}" ]] || exit
 
 		# Delete previous episode list
 		[[ -f ${anime_episodes_list} ]] && rm ${anime_episodes_list}
 
 		# Dump episodes to animedir
-		for f in $(cat ${tmp_animes_dir}); do
+		for f in $(cat ${tmp_animes_list}); do
 			echo "${f}" >> "${anime_episodes_list}"
 		done
 
