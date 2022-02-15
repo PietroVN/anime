@@ -2,9 +2,9 @@
 # Author: PietroVN
 # Deps: mpv, youtube-dl(or any fork), search (included), curl, sed
 # Examples:
-# video anime:<anime name>			| Search for anime with this name
-# video youtube:<video name>		| Search for a video with this name
-# video url:<url>					| Play specified url
+# video anime <anime name>			| Search for anime with this name
+# video youtube <video name>		| Search for a video with this name
+# video url <url>					| Play specified url
 
 # Include search
 . /usr/local/bin/search
@@ -20,7 +20,7 @@ anime_root="${root}/animes/"
 
 _youtube() {
 	# Leave only the title on command
-	command=$(sed 's/youtube://g' <<< ${command})
+	command=$(sed 's/youtube//g' <<< ${command})
 
 	# Search
 	search _youtube:${command}
@@ -56,7 +56,7 @@ _set_anime_variables() {
 _anime() {
 
 	# Leave only the title on command
-	command=$(sed 's/anime://g' <<< ${command})
+	command=$(sed 's/anime//g' <<< ${command})
 
 	########## Animes folder
 
@@ -210,13 +210,13 @@ _prev() {
 [[ -z ${command} ]] && echo "Empty command"
 
 case ${command} in
-	*"anime:"*)
+	*"anime"*)
 		_anime
 	;;
-	*"youtube:"*)
+	*"youtube"*)
 		_youtube
 	;;
-	*"url:"*)
+	*"url"*)
 		_url
 	;;
 	"next")
