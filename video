@@ -17,10 +17,6 @@ root="${HOME}/video_cli"
 
 # Anime related
 anime_root="${root}/animes/"
-anime_folder="${anime_root}${anime_current}/"
-anime_current_episode_dir="${anime_folder}/current_episode.txt"
-anime_current_watching_dir="${anime_folder}/current_watching.txt"
-anime_episodes_dir="${anime_folder}/episodes.txt"
 
 _youtube() {
 	# Leave only the title on command
@@ -44,8 +40,15 @@ _youtube() {
 }
 
 _set_anime_variables() {
-	# Set some variables that depend on files
 	anime_current=$(cat ${tmp_selected_anime_dir})
+
+	# Set folders
+	anime_folder="${anime_root}${anime_current}/"
+	anime_current_episode_dir="${anime_folder}/current_episode.txt"
+	anime_current_watching_dir="${anime_folder}/current_watching.txt"
+	anime_episodes_dir="${anime_folder}/episodes.txt"
+
+	# Set some variables that depend on files
 	[[ -f ${anime_current_episode_dir} ]] && anime_current_episode=$(cat ${anime_current_episode_dir})
 	[[ -f ${anime_episodes_dir} ]] && anime_episodes=$(cat ${anime_episodes_dir})
 }
@@ -56,6 +59,9 @@ _anime() {
 	command=$(sed 's/anime://g' <<< ${command})
 
 	########## Animes folder
+
+	# Set some variables that depend on files
+	_set_anime_variables
 
 	# Setup a dir on user home
 	[[ -d "${root}" ]] || mkdir ${root}
