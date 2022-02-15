@@ -52,8 +52,8 @@ _set_anime_variables() {
 	anime_episodes_dir="${anime_folder}/episodes/"
 
 	# Set some variables that depend on files
-	[[ -f ${anime_current_episode_dir} ]] && anime_current_episode=$(cat ${anime_current_episode_path})
-	[[ -f ${anime_episodes_dir} ]] && anime_episodes=$(cat ${anime_episodes_list})
+	[[ -f ${anime_current_episode_path} ]] && anime_current_episode=$(cat ${anime_current_episode_path})
+	[[ -f ${anime_episodes_list} ]] && anime_episodes=$(cat ${anime_episodes_list})
 	anime_current_watching=${anime_current}
 }
 
@@ -139,9 +139,18 @@ _anime_watch() {
 			# Kill previous mpv instance
 			[[ $(pgrep mpv) ]] && killall mpv
 
-			# Anime
+			# Set the variables
 			_set_anime_variables
-			anime=$(cat ${anime_episodes_list} | sed -n ${anime_current_episode}p)
+
+			# Prefer playing the downloaded episode
+			if [[ -d ${anime_episodes_dir} ]]; then
+				for f in ${anime_episodes_dir}*; do
+						[[ ${f} == *${anime_current_episode}* ]] && anime=${f} 
+				done
+			fi
+
+			# Play online version if user haven't downloaded this episode
+			[[ -z ${anime} ]] && anime=$(cat ${anime_episodes_list} | sed -n ${anime_current_episode}p)
 
 			# informs the user
 			echo "Playing: ${anime_current_watching}"
@@ -160,14 +169,21 @@ _anime_watch() {
 			# Kill previous mpv instance
 			[[ $(pgrep mpv) ]] && killall mpv
 
-			# set current ep
+			# Set current ep
 			_set_anime_variables
 			anime_episode="$((${anime_current_episode}+1))"
 			echo "${anime_episode}" > ${anime_current_episode_path}
 			_set_anime_variables
 
-			# get next episode
-			anime=$(cat ${anime_episodes_list} | sed -n ${anime_episode}p)
+			# Prefer playing the downloaded episode
+			if [[ -d ${anime_episodes_dir} ]]; then
+				for f in ${anime_episodes_dir}*; do
+						[[ ${f} == *${anime_current_episode}* ]] && anime=${f} 
+				done
+			fi
+
+			# Play online version if user haven't downloaded this episode
+			[[ -z ${anime} ]] && anime=$(cat ${anime_episodes_list} | sed -n ${anime_current_episode}p)
 
 			# informs the user
 			echo "Playing: ${anime_current_watching}"
@@ -192,8 +208,15 @@ _anime_watch() {
 			echo "${anime_episode}" > ${anime_current_episode_path}
 			_set_anime_variables
 
-			# Get previous episode
-			anime=$(cat ${anime_episodes_list} | sed -n ${anime_episode}p)
+			# Prefer playing the downloaded episode
+			if [[ -d ${anime_episodes_dir} ]]; then
+				for f in ${anime_episodes_dir}*; do
+						[[ ${f} == *${anime_current_episode}* ]] && anime=${f} 
+				done
+			fi
+
+			# Play online version if user haven't downloaded this episode
+			[[ -z ${anime} ]] && anime=$(cat ${anime_episodes_list} | sed -n ${anime_current_episode}p)
 
 			# Informs the user
 			echo "Playing: ${anime_current_watching}"
@@ -218,9 +241,6 @@ _anime_watching() {
 
 		case ${what_to_do} in
 			"next")
-				# Current anime
-				echo "$(cat ${tmp_anime_list} | sed -n ${choosen_anime}p)" > ${tmp_selected_anime_path}
-
 				# Watch mode
 				watch="next"
 
@@ -228,9 +248,6 @@ _anime_watching() {
 				_anime_watch
 			;;
 			"prev")
-				# Current anime
-				echo "$(cat ${tmp_anime_list} | sed -n ${choosen_anime}p)" > ${tmp_selected_anime_path}
-
 				# Watch mode
 				watch="prev"
 
@@ -241,16 +258,21 @@ _anime_watching() {
 	done
 }
 
-_anime_downlaod() {
+_anime_download() {
+	number=1
 	# Get anime
 	_set_anime_variables
+
+	# Create episodes dir
+	[[ -d "${anime_episodes_dir}" ]] || mkdir ${anime_episodes_dir}
 
 	# CD to episodes dir
 	cd ${anime_episodes_dir}
 
 	# Download
 	for f in $(cat ${anime_episodes_list}); do
-		wget ${f}
+		youtube-dl ${f} -o "ep-${number}.%(ext)s"
+		number=$((${number}+1))
 	done
 }
 
@@ -316,6 +338,9 @@ _anime_search() {
 
 		# Delete previous episode list
 		[[ -f ${anime_episodes_list} ]] && rm ${anime_episodes_list}
+	
+		# Set some variables that depend on files
+		_set_anime_variables
 
 		# Dump episodes to animedir
 		for f in $(cat ${tmp_animes_list}); do
@@ -325,9 +350,6 @@ _anime_search() {
 		# Select episode
 		echo "Select episode:"
 		read choosen_episode
-
-		# Set some variables that depend on files
-		_set_anime_variables
 	fi
 
 	# Get episode
@@ -335,6 +357,9 @@ _anime_search() {
 
 	# Save current episode
 	echo "${choosen_episode}" > "${anime_current_episode_path}"
+
+	# Set some variables that depend on files
+	_set_anime_variables
 
 	# Informs the user
 	echo "Playing: ${anime_current}"
