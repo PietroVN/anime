@@ -2,10 +2,10 @@
 # Author: PietroVN
 # Deps: mpv, youtube-dl(or any fork), search (included), curl, sed
 # Examples:
-# video anime list					| List anime and give some useful options
-# video anime <anime name>			| Search for anime with this name
-# video youtube <video name>		| Search for a video with this name
-# video url <url>					| Play specified url
+# video anime list							| List anime and give some useful options
+# video anime search <anime name>			| Search for anime with this name
+# video youtube <video name>				| Search for a video with this name
+# video url <url>							| Play specified url
 
 # Include search
 . /usr/local/bin/search
@@ -130,6 +130,9 @@ _anime_list() {
 _anime_watch() {
 	case ${watch} in
 		"current")
+			# Kill previous mpv instance
+			[[ $(pgrep mpv) ]] && killall mpv
+
 			# Anime
 			_set_anime_variables
 			anime=$(cat ${anime_episodes_dir} | sed -n ${anime_current_episode}p)
@@ -143,8 +146,14 @@ _anime_watch() {
 
 			# play && falback
 			mpv --no-terminal ${anime} &
+
+			# Drop user in a cli for changing episodes
+			_anime_watching
 		;;
 		"next")
+			# Kill previous mpv instance
+			[[ $(pgrep mpv) ]] && killall mpv
+
 			# set current ep
 			_set_anime_variables
 			anime_episode="$((${anime_current_episode}+1))"
@@ -163,8 +172,14 @@ _anime_watch() {
 
 			# play && falback
 			mpv --no-terminal ${anime} &
+
+			# Drop user in a cli for changing episodes
+			_anime_watching
 		;;
 		"prev")
+			# Kill previous mpv instance
+			[[ $(pgrep mpv) ]] && killall mpv
+
 			# Set current ep
 			_set_anime_variables
 			anime_episode="$((${anime_current_episode}-1))"
@@ -183,13 +198,50 @@ _anime_watch() {
 
 			# Play
 			mpv --no-terminal ${anime} &
+
+			# Drop user in a cli for changing episodes
+			_anime_watching
 		;;
 	esac
 }
 
+_anime_watching() {
+	while true; do
+		echo "[next | prev]"
+		read what_to_do
+
+		case ${what_to_do} in
+			"next")
+				# Current anime
+				echo "$(cat ${tmp_anime_list} | sed -n ${choosen_anime}p)" > ${tmp_selected_anime_dir}
+
+				# Watch mode
+				watch="next"
+
+				# Watch
+				_anime_watch
+			;;
+			"prev")
+				# Current anime
+				echo "$(cat ${tmp_anime_list} | sed -n ${choosen_anime}p)" > ${tmp_selected_anime_dir}
+
+				# Watch mode
+				watch="prev"
+
+				# Watch
+				_anime_watch
+			;;
+		esac
+	done
+}
+
 _anime_search() {
+	# Kill previous mpv instance
+	[[ $(pgrep mpv) ]] && killall mpv
+
 	# Leave only the title on command
 	command=$(sed 's/anime//g' <<< ${command})
+	command=$(sed 's/search//g' <<< ${command})
 
 	########## Animes folder
 
@@ -260,7 +312,7 @@ _anime_search() {
 	fi
 
 	# Get episode
-	video=$(cat ${anime_episodes_dir} | sed -n ${choosen_episode}p)
+	anime=$(cat ${anime_episodes_dir} | sed -n ${choosen_episode}p)
 
 	# Save current episode
 	echo "${choosen_episode}" > "${anime_current_episode_dir}"
@@ -276,7 +328,10 @@ _anime_search() {
 	echo "Opening mpv..."
 
 	# Play
-	mpv --no-terminal ${video} &
+	mpv --no-terminal ${anime} &
+
+	# Drop user in a cli for changing episodes
+	_anime_watching
 }
 
 _url() {
@@ -294,7 +349,7 @@ case ${command} in
 	"anime list")
 		_anime_list
 	;;
-	*"anime"*)
+	*"anime search"*)
 		_anime_search
 	;;
 	*"youtube"*)
