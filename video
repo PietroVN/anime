@@ -2,6 +2,7 @@
 # Author: PietroVN
 # Deps: mpv, youtube-dl(or any fork), search (included), curl, sed
 # Examples:
+# video anime list					| List anime and give some useful options
 # video anime <anime name>			| Search for anime with this name
 # video youtube <video name>		| Search for a video with this name
 # video url <url>					| Play specified url
@@ -17,6 +18,7 @@ root="${HOME}/video_cli"
 
 # Anime related
 anime_root="${root}/animes/"
+tmp_anime_list="${XDG_RUNTIME_DIR}/tmp_local_anime_list.txt"
 
 _youtube() {
 	# Leave only the title on command
@@ -51,10 +53,141 @@ _set_anime_variables() {
 	# Set some variables that depend on files
 	[[ -f ${anime_current_episode_dir} ]] && anime_current_episode=$(cat ${anime_current_episode_dir})
 	[[ -f ${anime_episodes_dir} ]] && anime_episodes=$(cat ${anime_episodes_dir})
+	anime_current_watching=${anime_current}
 }
 
-_anime() {
+_anime_list() {
+	number=1
 
+	# Delete previous anime list
+	[[ -d ${tmp_anime_list} ]] && rm ${tmp_anime_list}
+
+	# Store | List
+	for f in ${anime_root}*; do
+		echo "$(basename ${f})" > ${tmp_anime_list}
+		echo "${number} - $(basename ${f})"
+		number=$((${number}+1))
+	done
+
+	# Read user choice
+	echo ""
+	echo "Choose an anime:"
+	read choosen_anime
+
+	# Enter anime screen
+	echo "Anime: $(cat ${tmp_anime_list} | sed -n ${choosen_anime}p)"
+	echo "[1] - Watch current episode"
+	echo "[2] - Watch next episode"
+	echo "[3] - Watch previous episode"
+	echo "[4] - Download all episodes"
+	echo "[5] - Download selected episodes (soon)"
+	echo "[q] - Quit"
+	echo ""
+	echo "Choosen an option:"
+
+	# Read user choice
+	read what_to_do
+
+	case ${what_to_do} in 
+		"1")
+			# Current anime
+			echo "$(cat ${tmp_anime_list} | sed -n ${choosen_anime}p)" > ${tmp_selected_anime_dir}
+
+			# Watch mode
+			watch="current"
+
+			# Watch
+			_anime_watch
+		;;
+		"2")
+			# Current anime
+			echo "$(cat ${tmp_anime_list} | sed -n ${choosen_anime}p)" > ${tmp_selected_anime_dir}
+
+			# Watch mode
+			watch="next"
+
+			# Watch
+			_anime_watch
+		;;
+		"3")
+			# Current anime
+			echo "$(cat ${tmp_anime_list} | sed -n ${choosen_anime}p)" > ${tmp_selected_anime_dir}
+
+			# Watch mode
+			watch="prev"
+
+			# Watch
+			_anime_watch
+		;;
+		"4")
+		;;
+		"q")
+			exit 0
+		;;
+	esac
+}
+
+_anime_watch() {
+	case ${watch} in
+		"current")
+			# Anime
+			_set_anime_variables
+			anime=$(cat ${anime_episodes_dir} | sed -n ${anime_current_episode}p)
+
+			# informs the user
+			echo "Playing: ${anime_current_watching}"
+			echo "Episode: ${anime_current_episode}"
+
+			echo ""
+			echo "Opening mpv.."
+
+			# play && falback
+			mpv --no-terminal ${anime} &
+		;;
+		"next")
+			# set current ep
+			_set_anime_variables
+			anime_episode="$((${anime_current_episode}+1))"
+			echo "${anime_episode}" > ${anime_current_episode_dir}
+			_set_anime_variables
+
+			# get next eoisode
+			anime=$(cat ${anime_episodes_dir} | sed -n ${anime_episode}p)
+
+			# informs the user
+			echo "Playing: ${anime_current_watching}"
+			echo "Episode: ${anime_current_episode}"
+
+			echo ""
+			echo "Opening mpv.."
+
+			# play && falback
+			mpv --no-terminal ${anime} &
+		;;
+		"prev")
+			# Set current ep
+			_set_anime_variables
+			anime_episode="$((${anime_current_episode}-1))"
+			echo "${anime_episode}" > ${anime_current_episode_dir}
+			_set_anime_variables
+
+			# Get previous eoisode
+			anime=$(cat ${anime_episodes_dir} | sed -n ${anime_episode}p)
+
+			# Informs the user
+			echo "Playing: ${anime_current_watching}"
+			echo "Episode: ${anime_current_episode}"
+
+			echo ""
+			echo "Opening mpv.."
+
+			# Play
+			mpv --no-terminal ${anime} &
+		;;
+	esac
+}
+
+_anime_search() {
 	# Leave only the title on command
 	command=$(sed 's/anime//g' <<< ${command})
 
@@ -154,64 +287,15 @@ _url() {
 	mpv --no-terminal ${command}
 }
 
-_next() {
-	# Check for current watching
-	[[ -f "${anime_current_watching_dir}" ]] || echo "Current watching doesn't exists"
-
-	# Informs the user
-	echo "Playing next episode..."
-	
-
-	# Set current ep
-	_set_anime_variables
-	anime_episode="$((${anime_current_episode}+1))"
-	echo "${anime_episode}" > ${anime_current_episode_dir}
-
-	# Get next eoisode
-	video=$(cat ${anime_episodes_dir} | sed -n ${anime_episode}p)
-
-	# Informs the user
-	echo "Playing: ${anime_current_watching}"
-	echo "Episode: ${anime_current_episode}"
-
-	echo ""
-	echo "Opening mpv.."
-
-	# Play && falback
-	mpv --no-terminal ${video} &
-}
-
-_prev() {
-	# Check for current watching
-	[[ -f "${anime_current_watching}" ]] || echo "Current watching doesn't exists"
-
-	# Informs the user
-	echo "Playing previous episode..."
-
-	# Set current ep
-	_set_anime_variables
-	anime_episode="$((${anime_current_episode}-1))"
-	echo "${anime_episode}" > ${anime_current_episode_dir}
-
-	# Get previous eoisode
-	video=$(cat ${anime_episodes_dir} | sed -n ${anime_episode}p)
-
-	# Informs the user
-	echo "Playing: ${anime_current_watching}"
-	echo "Episode: ${current_episode}"
-
-	echo ""
-	echo "Opening mpv"
-
-	# Play
-	mpv --no-terminal ${video} &
-}
 # Check if command is empty
 [[ -z ${command} ]] && echo "Empty command"
 
 case ${command} in
+	"anime list")
+		_anime_list
+	;;
 	*"anime"*)
-		_anime
+		_anime_search
 	;;
 	*"youtube"*)
 		_youtube
