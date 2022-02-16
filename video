@@ -102,7 +102,7 @@ _anime_list() {
 	_set_anime_variables
 
 	# Enter anime screen
-	echo "Anime: $(cat ${tmp_local_anime_list} | sed -n ${choosen_anime}p)"
+	echo "Anime: ${anime_current}"
 	echo "[1] - Watch current episode"
 	echo "[2] - Watch next episode"
 	echo "[3] - Watch previous episode"
@@ -210,10 +210,10 @@ _anime_watch() {
 			echo "Episode: ${anime_current_episode}"
 
 			echo ""
-			echo "Opening mpv.."
+			echo "Opening mpv..."
 
 			# play && falback
-			mpv --no-terminal ${anime} &
+			mpv --no-terminal --save-position-on-quit ${anime} &
 
 			# Drop user in a cli for changing episodes
 			_anime_watching
@@ -243,10 +243,10 @@ _anime_watch() {
 			echo "Episode: ${anime_current_episode}"
 
 			echo ""
-			echo "Opening mpv.."
+			echo "Opening mpv..."
 
 			# play && falback
-			mpv --no-terminal ${anime} &
+			mpv --no-terminal  --save-position-on-quit ${anime} &
 
 			# Drop user in a cli for changing episodes
 			_anime_watching
@@ -276,10 +276,10 @@ _anime_watch() {
 			echo "Episode: ${anime_current_episode}"
 
 			echo ""
-			echo "Opening mpv.."
+			echo "Opening mpv..."
 
 			# Play
-			mpv --no-terminal ${anime} &
+			mpv --no-terminal --save-position-on-quit ${anime} &
 
 			# Drop user in a cli for changing episodes
 			_anime_watching
@@ -319,6 +319,9 @@ _anime_watching() {
 }
 
 _anime_download() {
+	# Title
+	echo "Downloading anime: ${anime_current}"
+
 	number=1
 	# Get anime
 	_set_anime_variables
@@ -331,7 +334,8 @@ _anime_download() {
 
 	# Download
 	for f in $(cat ${anime_episodes_list}); do
-		youtube-dl ${f} -o "ep-${number}.%(ext)s"
+		echo "Downloading episode: ${number}"
+		[[ $(ls ${anime_episodes_dir} | grep ${f}) ]] || youtube-dl --retries=infinite --fragment-retries=infinite --no-playlist ${f} -o "ep-${number}.%(ext)s" &> /dev/null
 		number=$((${number}+1))
 	done
 }
