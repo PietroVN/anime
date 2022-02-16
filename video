@@ -335,7 +335,7 @@ _anime_download() {
 	# Download
 	for f in $(cat ${anime_episodes_list}); do
 		echo "Downloading episode: ${number}"
-		[[ $(ls ${anime_episodes_dir} | grep ${f}) ]] || youtube-dl --retries=infinite --fragment-retries=infinite --no-playlist ${f} -o "ep-${number}.%(ext)s" &> /dev/null
+		[[ $(ls ${anime_episodes_dir}) == *"${f}"* ]] || youtube-dl --retries=infinite --fragment-retries=infinite --no-playlist ${f} -o "ep-${number}.%(ext)s" &> /dev/null
 		number=$((${number}+1))
 	done
 }
