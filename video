@@ -105,7 +105,7 @@ _anime_list() {
 	echo "Anime: ${anime_current}"
 	echo "Status:"
 	[[ -z ${need_to_fetch} ]] && echo "Episodes: $(cat ${anime_episodes_list} | wc -l)"
-	echo "Downloaded episodes: $(ls ${anime_episodes_dir} | wc -l)"
+	[[ -d "${anime_episodes_dir}" ]] && echo "Downloaded episodes: $(ls ${anime_episodes_dir} | wc -l)"
 	echo "Options:"
 	echo "[1] - Watch current episode"
 	echo "[2] - Watch next episode"
