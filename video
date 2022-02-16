@@ -231,6 +231,9 @@ _anime_watch() {
 			# play && falback
 			mpv --no-terminal --save-position-on-quit ${anime} &
 
+			# unset anime
+			unset anime
+
 			# Drop user in a cli for changing episodes
 			_anime_watching
 		;;
@@ -240,12 +243,12 @@ _anime_watch() {
 
 			# Set current ep
 			_set_anime_variables
-			anime_episode="$((${anime_current_episode}+1))"
-			echo "${anime_episode}" > ${anime_current_episode_path}
+			anime_episode=$((anime_current_episode + 1))
+			echo "${anime_episode}" > "${anime_current_episode_path}"
 			_set_anime_variables
 
 			# Prefer playing the downloaded episode
-			if [[ -d ${anime_episodes_dir} ]]; then
+			if [[ -d "${anime_episodes_dir}" ]]; then
 				for f in ${anime_episodes_dir}*; do
 						[[ ${f} == *${anime_current_episode}* ]] && anime=${f} 
 				done
@@ -253,7 +256,7 @@ _anime_watch() {
 
 			# Play online version if user haven't downloaded this episode
 			[[ -z ${anime} ]] && anime=$(cat ${anime_episodes_list} | sed -n ${anime_current_episode}p)
-
+	
 			# informs the user
 			echo "Playing: ${anime_current_watching}"
 			echo "Episode: ${anime_current_episode}"
@@ -264,6 +267,9 @@ _anime_watch() {
 			# play && falback
 			mpv --no-terminal  --save-position-on-quit ${anime} &
 
+			# unset anime
+			unset anime
+
 			# Drop user in a cli for changing episodes
 			_anime_watching
 		;;
@@ -273,8 +279,8 @@ _anime_watch() {
 
 			# Set current ep
 			_set_anime_variables
-			anime_episode="$((${anime_current_episode}-1))"
-			echo "${anime_episode}" > ${anime_current_episode_path}
+			anime_episode=$((anime_current_episode - 1))
+			echo "${anime_episode}" > "${anime_current_episode_path}"
 			_set_anime_variables
 
 			# Prefer playing the downloaded episode
@@ -296,6 +302,9 @@ _anime_watch() {
 
 			# Play
 			mpv --no-terminal --save-position-on-quit ${anime} &
+
+			# unset anime
+			unset anime
 
 			# Drop user in a cli for changing episodes
 			_anime_watching
