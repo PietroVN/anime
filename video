@@ -52,6 +52,7 @@ _set_anime_variables() {
 	anime_current_watching_path="${anime_folder}/current_watching.txt"
 	anime_provider_path="${anime_folder}/provider.txt"
 	anime_url_path="${anime_folder}/url.txt"
+	anime_id_path="${anime_folder}/id.txt"
 	anime_episodes_list="${anime_folder}/episodes_list.txt"
 	anime_episodes_dir="${anime_folder}/episodes/"
 
@@ -177,8 +178,8 @@ _anime_fetch_episode_list() {
 
 	# Prepare before use search to index episodes
 	echo "$(cat ${anime_url_path})" > "${tmp_animes_list}"
+	echo "$(cat ${anime_id_path})" >> ${tmp_animes_list}
 	echo "$(cat ${anime_provider_path})" >> "${tmp_animes_list}"
-	choosen_anime=1
 
 	# First we use search to index
 	search _choose_anime_episode &> /dev/null
@@ -398,6 +399,9 @@ _anime_search() {
 
 				# Set anime provider
 				echo "$(tail -n1 ${tmp_animes_list})" > ${anime_provider_path}
+
+				# Set anime id
+				echo "$(tail -n2 ${tmp_animes_list} | sed -n 1p)" > ${anime_id_path}
 
 				# Set anime url
 				echo "$(cat ${tmp_animes_list} | sed -n ${choosen_anime}p)" > ${anime_url_path}
