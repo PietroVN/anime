@@ -103,6 +103,10 @@ _anime_list() {
 
 	# Enter anime screen
 	echo "Anime: ${anime_current}"
+	echo "Status:"
+	[[ -z ${need_to_fetch} ]] && echo "Episodes: $(cat ${anime_episodes_list} | wc -l)"
+	echo "Downloaded episodes: $(ls ${anime_episodes_dir} | wc -l)"
+	echo "Options:"
 	echo "[1] - Watch current episode"
 	echo "[2] - Watch next episode"
 	echo "[3] - Watch previous episode"
@@ -112,6 +116,7 @@ _anime_list() {
 	[[ -z ${favorite} ]] || echo "[6] - Remove from favorites"
 	[[ -z ${need_to_fetch} ]] && echo "[7] - Fetch episode list"
 	[[ -z ${need_to_fetch} ]] || echo "[7] - Fetch episode list (RECOMMENDED!)"
+	echo "[8] - Remove from anime list"
 	echo "[q] - Quit"
 	echo ""
 	echo "Choosen an option:"
@@ -151,11 +156,21 @@ _anime_list() {
 		"7")
 			_anime_fetch_episode_list
 		;;
+		"8")
+			_anime_remove
+		;;
 
 		"q")
 			exit 0
 		;;
 	esac
+}
+_anime_remove() {
+	# Delete anime folder
+	rm -rf ${anime_folder}
+
+	# Remove from favorite list
+	_anime_favorite
 }
 
 _anime_fetch_episode_list() {
