@@ -18,7 +18,9 @@ root="${HOME}/video_cli"
 
 # Anime related
 anime_root="${root}/animes/"
-tmp_anime_list="${XDG_RUNTIME_DIR}/tmp_local_anime_list.txt"
+anime_root_misc_dir="${root}/misc/"
+anime_favorite_list="${anime_root_misc_dir}/favorite_list.txt"
+tmp_local_anime_list="${XDG_RUNTIME_DIR}/tmp_local_anime_list.txt"
 
 _youtube() {
 	# Leave only the title on command
@@ -48,6 +50,8 @@ _set_anime_variables() {
 	anime_folder="${anime_root}${anime_current}/"
 	anime_current_episode_path="${anime_folder}/current_episode.txt"
 	anime_current_watching_path="${anime_folder}/current_watching.txt"
+	anime_provider_path="${anime_folder}/provider.txt"
+	anime_url_path="${anime_folder}/url.txt"
 	anime_episodes_list="${anime_folder}/episodes_list.txt"
 	anime_episodes_dir="${anime_folder}/episodes/"
 
@@ -61,13 +65,13 @@ _anime_list() {
 	number=1
 
 	# Delete previous anime list
-	[[ -d ${tmp_anime_list} ]] && rm ${tmp_anime_list}
+	[[ -f ${tmp_local_anime_list} ]] && rm ${tmp_local_anime_list}
 
 	# Store | List
 	for f in ${anime_root}*; do
-		echo "$(basename ${f})" > ${tmp_anime_list}
-		echo "${number} - $(basename ${f})"
-		number=$((${number}+1))
+			echo "$(basename ${f})" >> ${tmp_local_anime_list}
+			echo "${number} - $(basename ${f})"
+			number=$((${number}+1))
 	done
 
 	# Read user choice
@@ -75,13 +79,36 @@ _anime_list() {
 	echo "Choose an anime:"
 	read choosen_anime
 
+	# Current anime
+	echo "$(cat ${tmp_local_anime_list} | sed -n ${choosen_anime}p)" > ${tmp_selected_anime_path}
+
+	# Set anime variables
+	_set_anime_variables
+
+	# Check if anime is already on favorite list
+	if [[ -f ${anime_favorite_list} ]]; then
+		for f in $(cat ${anime_favorite_list}); do
+			[[ ${f} == $(cat ${tmp_local_anime_list} | sed -n ${choosen_anime}p) ]] && favorite=true
+		done
+	fi
+
+	# Check if we have downloaded episode list
+	[[ -f "${anime_episodes_list}" ]] || need_to_fetch=true
+
+	# Set anime variables
+	_set_anime_variables
+
 	# Enter anime screen
-	echo "Anime: $(cat ${tmp_anime_list} | sed -n ${choosen_anime}p)"
+	echo "Anime: $(cat ${tmp_local_anime_list} | sed -n ${choosen_anime}p)"
 	echo "[1] - Watch current episode"
 	echo "[2] - Watch next episode"
 	echo "[3] - Watch previous episode"
 	echo "[4] - Download all episodes"
 	echo "[5] - Download selected episodes (soon)"
+	[[ -z ${favorite} ]] && echo "[6] - Add to favorites"
+	[[ -z ${favorite} ]] || echo "[6] - Remove from favorites"
+	[[ -z ${need_to_fetch} ]] && echo "[7] - Fetch episode list"
+	[[ -z ${need_to_fetch} ]] || echo "[7] - Fetch episode list (RECOMMENDED!)"
 	echo "[q] - Quit"
 	echo ""
 	echo "Choosen an option:"
@@ -91,9 +118,6 @@ _anime_list() {
 
 	case ${what_to_do} in 
 		"1")
-			# Current anime
-			echo "$(cat ${tmp_anime_list} | sed -n ${choosen_anime}p)" > ${tmp_selected_anime_path}
-
 			# Watch mode
 			watch="current"
 
@@ -101,9 +125,6 @@ _anime_list() {
 			_anime_watch
 		;;
 		"2")
-			# Current anime
-			echo "$(cat ${tmp_anime_list} | sed -n ${choosen_anime}p)" > ${tmp_selected_anime_path}
-
 			# Watch mode
 			watch="next"
 
@@ -111,9 +132,6 @@ _anime_list() {
 			_anime_watch
 		;;
 		"3")
-			# Current anime
-			echo "$(cat ${tmp_anime_list} | sed -n ${choosen_anime}p)" > ${tmp_selected_anime_path}
-
 			# Watch mode
 			watch="prev"
 
@@ -121,16 +139,48 @@ _anime_list() {
 			_anime_watch
 		;;
 		"4")
-			# Current anime
-			echo "$(cat ${tmp_anime_list} | sed -n ${choosen_anime}p)" > ${tmp_selected_anime_path}
-
 			# Download
 			_anime_download
 		;;
+		"6")
+			_anime_favorite
+		;;
+		"7")
+			_anime_fetch_episode_list
+		;;
+
 		"q")
 			exit 0
 		;;
 	esac
+}
+
+_anime_fetch_episode_list() {
+
+	# Prepare before use search to index episodes
+	echo "$(cat ${anime_url_path})" > "${tmp_animes_list}"
+	echo "$(cat ${anime_provider_path})" >> "${tmp_animes_list}"
+	choosen_anime=1
+
+	# First we use search to index
+	search _choose_anime_episode &> /dev/null
+
+	# Detect if user already have a episode list and delete
+	[[ -f "${anime_episodes_list}" ]] && rm "${anime_episodes_list}"
+
+	#  Then we dump the indexed links
+	for f in $(cat ${tmp_animes_list}); do
+		echo "${f}" >> "${anime_episodes_list}"
+	done
+}
+
+_anime_favorite() {
+	# Add favorite
+	[[ -z ${favorite} ]] && echo "$(cat ${tmp_local_anime_list} | sed -n ${choosen_anime}p)" >> "${anime_favorite_list}"
+
+	# Remove favorite
+	[[ -z ${favorite} ]] || r=$(sed "s/$(cat ${tmp_local_anime_list} | sed -n ${choosen_anime}p)//g" ${anime_favorite_list})
+	[[ -z ${favorite} ]] || echo "${r}" > "${anime_favorite_list}"
 }
 
 _anime_watch() {
@@ -277,16 +327,14 @@ _anime_download() {
 }
 
 _anime_search() {
-	# Kill previous mpv instance
-	[[ $(pgrep mpv) ]] && killall mpv
-
 	# Leave only the title on command
 	command=$(sed 's/anime//g' <<< ${command})
 	command=$(sed 's/search//g' <<< ${command})
 
-	########## Animes folder
+	# Search anime
+	search _anime:${command}
 
-	# Set some variables that depend on files
+	# Set variables
 	_set_anime_variables
 
 	# Setup a dir on user home
@@ -295,87 +343,54 @@ _anime_search() {
 	# Create anime root
 	[[ -d "${anime_root}" ]] || mkdir ${anime_root}
 
-	# Create folder for saving current anime episode
-	[[ -d "${anime_folder}" ]] || mkdir "${anime_folder}"
+	# Create misc folder
+	[[ -d "${anime_root_misc_dir}" ]] || mkdir ${anime_root_misc_dir}
 
-	# Search anime
-	search _anime:${command}
-	
+	# Set variables
+	_set_anime_variables
+
+	# Check if this anime is already on the list
+	if [[ ! -d "${anime_folder}" ]]; then
+		# Prompt user to add the selected anime to the list
+		echo "Do you want to add this anime to your list?"
+		echo "[yes | no]"
+		read  add_anime
+
+		case ${add_anime} in
+			"yes")
+				# Informs the user
+				echo "Adding ${anime_current} to your list"
+
+				# Create folder for saving current anime episode
+				mkdir "${anime_folder}"
+
+				# Set variables
+				_set_anime_variables
+
+				# Set anime provider
+				echo "$(tail -n1 ${tmp_animes_list})" > ${anime_provider_path}
+
+				# Set anime url
+				echo "$(cat ${tmp_animes_list} | sed -n ${choosen_anime}p)" > ${anime_url_path}
+
+				# Set first episode
+				echo "1" > "${anime_current_episode_path}"
+			;;
+			"no")
+				exit 0
+			;;
+		esac
+	else
+		echo "You already have this anime added to your list"
+	fi
+
 	# Check for errors
 	[[ -f "${tmp_animes_list}" ]] || echo "Error fetching anime list"
 	[[ -f "${tmp_animes_list}" ]] || exit
 
 	# Set some variables that depend on files
 	_set_anime_variables
-	
-	########## QOL
-
-	# Check if user watched this anime before and prompt to continue watching
-	if [[ -f ${anime_current_episode_path} ]]; then
-		# Prompt user
-		echo ""
-		echo "You already watched this anime before, do you want to continue from where you stopped?"
-		echo "[yes | no | next | prev]"
-		read continue_
-
-		# Continue
-		[[ "${continue_}" == "yes" ]] && choosen_episode=${anime_current_episode}
-		[[ "${continue_}" == "next" ]] && choosen_episode=$((${anime_current_episode}+1))
-		[[ "${continue_}" == "prev" ]] && choosen_episode=$((${anime_current_episode}-1))
-		[[ "${continue_}" == "no" ]] || echo "${choosen_episode}" > ${anime_current_episode_path}
-
-		# Set some variables that depend on files
-		_set_anime_variables
-	fi
-	
-	if [[ "${continue_}" == "no" || -z ${continue_} ]]; then
-		# Fetch episodes list
-		search _choose_anime_episode
 		
-		# Check for errors
-		[[ -f "${tmp_animes_list}" ]] || echo "Error fetching episodes list"
-		[[ -f "${tmp_animes_list}" ]] || exit
-
-		# Delete previous episode list
-		[[ -f ${anime_episodes_list} ]] && rm ${anime_episodes_list}
-	
-		# Set some variables that depend on files
-		_set_anime_variables
-
-		# Dump episodes to animedir
-		for f in $(cat ${tmp_animes_list}); do
-			echo "${f}" >> "${anime_episodes_list}"
-		done
-
-		# Select episode
-		echo "Select episode:"
-		read choosen_episode
-	fi
-
-	# Get episode
-	anime=$(cat ${anime_episodes_list} | sed -n ${choosen_episode}p)
-
-	# Save current episode
-	echo "${choosen_episode}" > "${anime_current_episode_path}"
-
-	# Set some variables that depend on files
-	_set_anime_variables
-
-	# Informs the user
-	echo "Playing: ${anime_current}"
-	echo "Episode: ${anime_current_episode}"
-
-	# Update current_watching
-	echo "${anime_current}" > ${anime_current_watching_path}
-
-	echo ""
-	echo "Opening mpv..."
-
-	# Play
-	mpv --no-terminal ${anime} &
-
-	# Drop user in a cli for changing episodes
-	_anime_watching
 }
 
 _url() {
