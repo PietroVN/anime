@@ -67,6 +67,9 @@ _anime_list() {
 	# Delete previous anime list
 	[[ -f ${tmp_local_anime_list} ]] && rm ${tmp_local_anime_list}
 
+	# Title
+	echo "Animes:"
+
 	# Store | List
 	for f in ${anime_root}*; do
 			echo "$(basename ${f})" >> ${tmp_local_anime_list}
@@ -286,7 +289,7 @@ _anime_watch() {
 
 _anime_watching() {
 	while true; do
-		echo "[next | prev]"
+		echo "[next | prev | quit]"
 		read what_to_do
 
 		case ${what_to_do} in
@@ -303,6 +306,13 @@ _anime_watching() {
 
 				# Watch
 				_anime_watch
+			;;
+			"quit")
+				# Kill mpv
+				killall mpv
+
+				# Exit
+				exit 0 
 			;;
 		esac
 	done
