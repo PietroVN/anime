@@ -105,8 +105,9 @@ _anime_list() {
 	# Enter anime screen
 	echo "Anime: ${anime_current}"
 	echo "Status:"
-	[[ -z ${need_to_fetch} ]] && echo "Episodes: $(cat ${anime_episodes_list} | wc -l)"
-	[[ -d "${anime_episodes_dir}" ]] && echo "Downloaded episodes: $(ls ${anime_episodes_dir} | wc -l)"
+	[[ -z ${need_to_fetch} ]] && echo "- Episodes: $(cat ${anime_episodes_list} | wc -l)"
+	[[ -d "${anime_episodes_dir}" ]] && echo "- Downloaded episodes: $(ls ${anime_episodes_dir} | wc -l)"
+	echo "- Current episode: ${anime_current_episode}"
 	echo "Options:"
 	echo "[1] - Watch current episode"
 	echo "[2] - Watch next episode"
@@ -314,6 +315,7 @@ _anime_watch() {
 
 _anime_watching() {
 	while true; do
+		clear
 		echo "[next | prev | quit]"
 		read what_to_do
 
