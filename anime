@@ -25,7 +25,7 @@ _set_anime_variables() {
 	anime_current_episode_path="${anime_folder}/current_episode.txt"
 	anime_current_watching_path="${anime_folder}/current_watching.txt"
 	anime_provider_path="${anime_folder}/provider.txt"
-	anime_url_path="${anime_folder}/uzrl.txt"
+	anime_url_path="${anime_folder}/url.txt"
 	anime_id_path="${anime_folder}/id.txt"
 	anime_episodes_list="${anime_folder}/episodes_list.txt"
 	anime_episodes_dir="${anime_folder}/episodes/"
