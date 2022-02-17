@@ -352,9 +352,6 @@ _anime_search() {
 	# Set variables
 	_set_anime_variables
 
-	# Setup a dir on user home
-	[[ -d "${root}" ]] || mkdir ${root}
-
 	# Create anime root
 	[[ -d "${anime_root}" ]] || mkdir ${anime_root}
 
