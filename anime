@@ -2,10 +2,8 @@
 # Author: PietroVN
 # Deps: mpv, youtube-dl(or any fork), search (included), curl, sed
 # Examples:
-# video anime list							| List anime and give some useful options
-# video anime search <anime name>			| Search for anime with this name
-# video youtube <video name>				| Search for a video with this name
-# video url <url>							| Play specified url
+# anime list						| List anime and give some useful options
+# anime search <anime name>			| Search for anime with this name
 
 # Include search
 . /usr/local/bin/search
@@ -13,35 +11,11 @@
 # Command
 command=$@
 
-# Enviroment
-root="${HOME}/video_cli"
-
 # Anime related
-anime_root="${root}/animes/"
-anime_root_misc_dir="${root}/misc/"
+anime_root="animes/"
+anime_root_misc_dir="${anime_root}/misc/"
 anime_favorite_list="${anime_root_misc_dir}/favorite_list.txt"
 tmp_local_anime_list="${XDG_RUNTIME_DIR}/tmp_local_anime_list.txt"
-
-_youtube() {
-	# Leave only the title on command
-	command=$(sed 's/youtube//g' <<< ${command})
-
-	# Search
-	search _youtube:${command}
-
-	# Check for errors | don't warn the user about the error because search already handle this
-	[[ -f "${tmp_videos_list}" ]] || exit
-
-	# Video selection
-	echo "Select video:"
-	read video_number
-
-	# Get video from tmp videos
-	video=$(cat ${tmp_videos_list} | sed -n ${video_number}p)
-
-	# Play
-	mpv --no-terminal ${youtube}${video}
-}
 
 _set_anime_variables() {
 	anime_current=$(cat ${tmp_selected_anime_path})
@@ -433,41 +407,17 @@ _anime_search() {
 	[[ -f "${tmp_animes_list}" ]] || exit
 
 	# Set some variables that depend on files
-	_set_anime_variables
-		
-}
-
-_url() {
-	# Clear command
-	command=$(sed 's/url//g' <<< ${command})
-
-	# Play
-	mpv --no-terminal ${command}
+	_set_anime_variables		
 }
 
 # Check if command is empty
 [[ -z ${command} ]] && echo "Empty command"
 
 case ${command} in
-	"anime list")
+	"list")
 		_anime_list
 	;;
-	*"anime search"*)
+	*"search"*)
 		_anime_search
-	;;
-	*"youtube"*)
-		_youtube
-	;;
-	*"url"*)
-		_url
-	;;
-	"next")
-		_next
-	;;
-	"prev")
-		_prev
-	;;
-	"previous")
-		_prev
 	;;
 esac

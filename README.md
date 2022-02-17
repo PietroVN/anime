@@ -1,5 +1,5 @@
-# Video
-Simple script to watch videos and animes on terminal
+# Anime
+Simple script to watch  animes on terminal
 
 # Features
 - Save your current episode
@@ -8,11 +8,11 @@ Simple script to watch videos and animes on terminal
 - Minimal deps (only the necessary)
 
 # Deps
-* Search (Included)
-* Mpv
-* YoutubeDL
-* Sed
-* Curl
+* search (Included)
+* mpv
+* youtube-dl (or any fork)
+* sed
+* curl
 
 # Install instructions
 * Clone this repo
