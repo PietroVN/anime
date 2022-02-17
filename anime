@@ -289,7 +289,6 @@ _anime_watch() {
 
 _anime_watching() {
 	while true; do
-		clear
 		echo "[next | prev | quit]"
 		read what_to_do
 
