@@ -12,7 +12,7 @@
 command=$@
 
 # Anime related
-anime_root="animes/"
+anime_root="${HOME}/animes/"
 anime_root_misc_dir="${anime_root}/misc/"
 anime_favorite_list="${anime_root_misc_dir}/favorite_list.txt"
 tmp_local_anime_list="${XDG_RUNTIME_DIR}/tmp_local_anime_list.txt"
@@ -25,7 +25,7 @@ _set_anime_variables() {
 	anime_current_episode_path="${anime_folder}/current_episode.txt"
 	anime_current_watching_path="${anime_folder}/current_watching.txt"
 	anime_provider_path="${anime_folder}/provider.txt"
-	anime_url_path="${anime_folder}/url.txt"
+	anime_url_path="${anime_folder}/uzrl.txt"
 	anime_id_path="${anime_folder}/id.txt"
 	anime_episodes_list="${anime_folder}/episodes_list.txt"
 	anime_episodes_dir="${anime_folder}/episodes/"
@@ -47,9 +47,9 @@ _anime_list() {
 
 	# Store | List
 	for f in ${anime_root}*; do
-			echo "$(basename ${f})" >> ${tmp_local_anime_list}
-			echo "${number} - $(basename ${f})"
-			number=$((${number}+1))
+			[[ "$(basename $f)" != *"misc"* ]] && echo "$(basename ${f})" >> ${tmp_local_anime_list}
+			[[ "$(basename $f)" != *"misc"* ]] && echo "${number} - $(basename ${f})"
+			[[ "$(basename $f)" != *"misc"* ]] && number=$((number + 1))
 	done
 
 	# Read user choice
