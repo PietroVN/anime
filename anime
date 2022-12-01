@@ -8,7 +8,6 @@
 # anime search <anime name>		| Search for anime with this name		      #
 ###############################################################################################
 
-
 # Include search library
 . search
 
@@ -207,7 +206,7 @@ _anime_watch() {
 			fi
 
 			# Play online version if user haven't downloaded this episode
-			[[ -z "$anime" ]] && anime=$(cat "$anime_episodes_list" | sed -n $"anime_current_episode"p)
+			[[ -z "$anime" ]] && anime=$(cat "$anime_episodes_list" | sed -n "$anime_current_episode"p)
 
 			# informs the user
 			echo "Playing: $anime_current_watching"
