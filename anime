@@ -20,6 +20,21 @@ script_misc_dir="${script_root}/misc/"							# Miscelaneous dir
 favorite_anime_list="${script_misc_dir}/favorite_list.txt"				# Favorites file
 tmp_local_anime_list="${XDG_RUNTIME_DIR}/tmp_local_anime_list.txt"			# Local anime list
 
+_help() {
+	echo "//////////////////////////////////////////////////////////////////////////"
+	echo "Anime"
+	echo "//////////////////////////////////////////////////////////////////////////"
+	echo "anime search <anime name>      | Search and add an anime to the list"
+	echo "anime list                     | List animes that are already on the list"
+	echo "//////////////////////////////////////////////////////////////////////////"
+	echo "Parameters:"
+	echo "//////////////////////////////////////////////////////////////////////////"
+	echo "-m/--max-videos                | Limit the videos that will show up"
+	echo "//////////////////////////////////////////////////////////////////////////"
+	echo "Author: Waltz"
+	echo "//////////////////////////////////////////////////////////////////////////"
+}
+
 _set_anime_variables() {
 	# Set current anime
 	anime_current=$(cat "$tmp_selected_anime_path")					# Current anime
@@ -359,7 +374,7 @@ _anime_search() {
 	command=$(sed 's/search//g' <<< "$command")
 
 	# Search anime
-	search _anime:"$command"
+	search anime "$command"
 
 	# Set variables
 	_set_anime_variables
@@ -428,10 +443,7 @@ _anime_search() {
 [[ -z "$command" ]] && echo "Empty command"
 
 case "$command" in
-	"list")
-		_anime_list
-	;;
-	*"search"*)
-		_anime_search
-	;;
+	"list") 	_anime_list ;;
+	*"search"*) _anime_search ;;
+	"help")		_help ;;
 esac
